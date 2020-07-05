@@ -1,0 +1,31 @@
+html,
+body {
+  font-family: sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+.wrapper-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgb(36, 86, 210);
+  background: linear-gradient(
+    90deg,
+    rgba(36, 86, 210, 1) 0%,
+    rgba(25, 142, 134, 1) 27%,
+    rgba(133, 12, 245, 1) 42%,
+    rgba(163, 3, 255, 1) 61%,
+    rgba(222, 0, 255, 1) 78%
+  );
+}
+
+canvas {
+  display: block; /* prevents scrollbar */
+  width: 60vw;
+  height: 80vh;
+}
