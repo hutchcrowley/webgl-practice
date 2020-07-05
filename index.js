@@ -43,9 +43,9 @@ void main(void) {
   //
 
   const fsSource = `
-void main() {
-gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-}
+   void main() {
+     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+   }
 `;
 
   //
@@ -61,7 +61,8 @@ gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   const programInfo = {
     program: shaderProgram,
     attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition")
+      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+      vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor")
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(
@@ -211,7 +212,7 @@ function drawScene(gl, programInfo, buffers) {
     const normalize = false;
     const stride = 0;
     const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.posttion);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.vertexAttribPointer(
       programInfo.attribLocations.vertexPosition,
       numComponents,
@@ -221,6 +222,25 @@ function drawScene(gl, programInfo, buffers) {
       offset
     );
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+  }
+
+  //   Tell WebGL how to pull out the colors from the color buffer into the vertexColor attribute.
+  {
+    const numComponents = 4;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+    gl.vertexAttribPointer(
+      programInfo.attribLocations.vertexColor,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset
+    );
+    gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
   }
 
   //   tell WebGL what program to use when drawing
