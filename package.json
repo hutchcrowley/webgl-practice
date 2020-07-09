@@ -1,7 +1,7 @@
 {
   "name": "webgl-practice",
   "version": "1.0.0",
-  "description": "",
+  "description": "A sandbox to practice the webGl graphics API based on the webGL tutorial on MDN",
   "main": "index.html",
   "scripts": {
     "start": "parcel index.html --open",
@@ -14,5 +14,5 @@
     "@babel/core": "7.2.0",
     "parcel-bundler": "^1.6.1"
   },
-  "keywords": []
+  "keywords": ["graphics", "web api", "webgl", "tutorials"]
 }

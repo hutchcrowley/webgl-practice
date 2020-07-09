@@ -1,15 +1,25 @@
 import { mat4 } from "gl-matrix";
+
+var cubeRotation = 0.0;
+
 main();
+
 //
 // Start here
 //
+
 function main() {
   //   grab a reference to glCanvas
+
   const canvas = document.querySelector("#glCanvas");
   const gl = canvas.getContext("webgl");
+
+  console.log("canvas element in main function: ", canvas);
+
   //
   //   check to see if we have a GL context, if not, show an error
   //
+
   if (!gl) {
     alert(
       "Unable to initialize WebGL. Your browser or machine may not support it."
@@ -21,17 +31,20 @@ function main() {
   // Vertex shader program - stored as a strinf on a variable called vsSource
   // Written in GLSL - GL Shader Language
   // Vertex shader's job is to compute vertex positions. Based on the positions the function outputs, WebGL can rasterize various kinds of primitives including points, lines, or triangles. When rasterizing these primitves, it calls second function - fragment shader
-
   //
 
   const vsSource = `
-      attribute vec4 aVertexPosition;
+    attribute vec4 aVertexPosition;
+    attribute vec4 aVertexColor;
+    
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
 
-uniform mat4 uModelViewMatrix;
-uniform mat4 uProjectionMatrix;
+    varying lowp vec4 vColor;
 
-void main() {
+void main(void) {
   gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+  vColor = aVertexColor;
 }
 `;
 
@@ -40,9 +53,11 @@ void main() {
   //
 
   const fsSource = `
-void main() {
-gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-}
+  varying lowp vec4 vColor;
+
+   void main(void) {
+     gl_FragColor = vColor;
+   }
 `;
 
   //
@@ -58,7 +73,8 @@ gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   const programInfo = {
     program: shaderProgram,
     attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition")
+      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+      vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor")
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(
@@ -68,14 +84,26 @@ gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
       modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix")
     }
   };
+
   //
   //    call the routine that builds all the objects to be drawn
   //
+
   const buffers = initBuffers(gl);
-  //
-  //   Draw the scene
-  //
-  drawScene(gl, programInfo, buffers);
+
+  var then = 0;
+
+  // draw the scene repeatedly
+  function render(now) {
+    now *= 0.001;
+    const deltaTime = now - then;
+    then = now;
+
+    drawScene(gl, programInfo, buffers, deltaTime);
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
 }
 
 //
@@ -84,28 +112,6 @@ gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 // Initialize the needed buffers. In this case, there will be one object - a 2d `square`.
 //
 function initBuffers(gl) {
-  const colors = [
-    1.0,
-    1.0,
-    1.0,
-    1.0, // white
-    1.0,
-    0.0,
-    0.0,
-    1.0, // red
-    0.0,
-    1.0,
-    0.0,
-    1.0, // green
-    0.0,
-    0.0,
-    1.0,
-    1.0 // blue
-  ];
-
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer = f;
-
   //   create the buffer for a square's positions
 
   const positionBuffer = gl.createBuffer();
@@ -116,7 +122,91 @@ function initBuffers(gl) {
 
   //   create an array of positions for the square
 
-  const positions = [1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0];
+  const positions = [
+    // Front face
+    -1.0,
+    -1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+
+    // Back face
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    -1.0,
+
+    // Top face
+    -1.0,
+    1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    -1.0,
+
+    // Bottom face
+    -1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    -1.0,
+    1.0,
+
+    // Right face
+    1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+
+    // Left face
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    1.0,
+    1.0,
+    -1.0,
+    1.0,
+    -1.0
+  ];
 
   //   pass the list of positions into WebGL to build the shape.
   //   do thisby creating a Float32Array from the JavaScript array,
@@ -124,35 +214,122 @@ function initBuffers(gl) {
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-  return {
-    position: positionBuffer
-  };
-}
+  //
+  // create an array of colors for each of the 24 vertices
+  //
 
-//
-// Dynamically resize the canvas based upon viewport size
-//
-function resize(canvas) {
-  let realToCSSPixels = window.devicePixelRatio;
+  // define a color for each face
 
-  // Look up the size the browser is displaying the canvas in CSS pixels and compute a size needed to make drawingBuffer match it in device pixels.
-  // support HD-DPI
-  let displayWidth = Math.floor(canvas.clientWidth * realToCSSPixels);
-  let displayHeight = Math.floor(canvas.clientHeight * realToCSSPixels);
+  const faceColors = [
+    [1.0, 1.0, 1.0, 1.0], // Front face: white
+    [1.0, 0.0, 0.0, 1.0], // Back face: red
+    [0.0, 1.0, 0.0, 1.0], // Top face: green
+    [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
+    [1.0, 1.0, 0.0, 1.0], // Right face: yellow
+    [1.0, 0.0, 1.0, 1.0] // Left face: purple
+  ];
 
-  // Check to see if the canvas is  not the same size.
-  if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-    //  Make the canvas the same size.
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
+  //  convert array of colors into a table for all vertices
+
+  let colors = [];
+
+  for (let j = 0; j < faceColors.length; ++j) {
+    const c = faceColors[j];
+
+    //  Repeat each color four times for the four vertices of the face
+    colors = colors.concat(c, c, c, c);
   }
+
+  // set up colors for the vertices
+
+  // const colors = [
+  //   1.0,
+  //   1.0,
+  //   1.0,
+  //   1.0, // white
+  //   1.0,
+  //   0.0,
+  //   0.0,
+  //   1.0, // red
+  //   0.0,
+  //   1.0,
+  //   0.0,
+  //   1.0, // green
+  //   0.0,
+  //   0.0,
+  //   1.0,
+  //   1.0 // blue
+  // ];
+
+  const colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+  // build the element array
+  const indexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+  // array defining each face as two triangles, using the indeces into the vertex array to specify each triangle's position
+
+  const indices = [
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // front
+    4,
+    5,
+    6,
+    4,
+    6,
+    7, // back
+    8,
+    9,
+    10,
+    8,
+    10,
+    11, // top
+    12,
+    13,
+    14,
+    12,
+    14,
+    15, // bottom
+    16,
+    17,
+    18,
+    16,
+    18,
+    19, // right
+    20,
+    21,
+    22,
+    20,
+    22,
+    23 // left
+  ];
+
+  //  send element array to GL
+
+  gl.bufferData(
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(indices),
+    gl.STATIC_DRAW
+  );
+
+  return {
+    position: positionBuffer,
+    color: colorBuffer,
+    indices: indexBuffer
+  };
 }
 
 //
 // Draw the scene.
 //
 
-function drawScene(gl, programInfo, buffers) {
+function drawScene(gl, programInfo, buffers, deltaTime) {
   // set clear to black, fully opqque
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   //   clear everything
@@ -161,11 +338,6 @@ function drawScene(gl, programInfo, buffers) {
   gl.enable(gl.DEPTH_TEST);
   //   near things obscure far things
   gl.depthFunc(gl.LEQUAL);
-
-  // Call the resize function
-  resize(gl.canvas);
-
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   //
   //   Clear the canvas before drawing on it.
@@ -179,7 +351,7 @@ function drawScene(gl, programInfo, buffers) {
   // also, we only wnat to see objects between 0.1 units
   // and 100 units away from the camera.
 
-  const fieldOfView = (45 * Math.PI) / 100; // in radians
+  const fieldOfView = (45 * Math.PI) / 180; // in radians
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
   const zNear = 0.1;
   const zFar = 100.0;
@@ -188,7 +360,7 @@ function drawScene(gl, programInfo, buffers) {
   //   note: glmatrix.js always has the first argument as teh destination to recieve result.
   mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
-  //   Set the drawing position to the "identity" point, which is the center of the scene.
+  // set drawing position to 'identity' point, the center of the scene
   const modelViewMatrix = mat4.create();
 
   //   Move the drawing position a bit to where I want to start the square
@@ -199,14 +371,29 @@ function drawScene(gl, programInfo, buffers) {
     [-0.0, 0.0, -6.0]
   ); // amout to translate
 
+  mat4.rotate(
+    modelViewMatrix, //destination matrix
+    modelViewMatrix, //matrix to rotate
+    cubeRotation, //amount to rotate in radians
+    [0, 0, 1]
+  ); //axis to rotate around (z)
+
+  mat4.rotate(
+    modelViewMatrix, //destination matrix
+    modelViewMatrix, //matrix to rotate
+    cubeRotation * 0.7, //amount to rotate in radians
+    [0, 1, 0]
+  ); //axis to rotate around (x)
+
   //   Tell WebGL how to pull out the position from the position buffer into the vertexPosition attribute.
+
   {
-    const numComponents = 2;
+    const numComponents = 3;
     const type = gl.FLOAT;
     const normalize = false;
     const stride = 0;
     const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.posttion);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.vertexAttribPointer(
       programInfo.attribLocations.vertexPosition,
       numComponents,
@@ -217,6 +404,28 @@ function drawScene(gl, programInfo, buffers) {
     );
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
   }
+
+  //   Tell WebGL how to pull out the colors from the color buffer into the vertexColor attribute.
+  {
+    const numComponents = 4;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+    gl.vertexAttribPointer(
+      programInfo.attribLocations.vertexColor,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset
+    );
+    gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
+  }
+
+  // Tell WebGL which indeices to use to index the vertices
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
   //   tell WebGL what program to use when drawing
 
@@ -236,10 +445,15 @@ function drawScene(gl, programInfo, buffers) {
   );
 
   {
+    const vertexCount = 36;
+    const type = gl.UNSIGNED_SHORT;
     const offset = 0;
-    const vertexCount = 4;
-    gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+    gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
   }
+
+  //  Update rotation for next draw
+
+  cubeRotation += deltaTime;
 }
 
 //
