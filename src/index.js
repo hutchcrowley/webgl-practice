@@ -5,6 +5,26 @@ var cubeRotation = 0.0;
 main();
 
 //
+// Dynamically resize canvas based on viewport size
+//
+
+function resize(canvas) {
+  let realToCSSPixels = window.devicePixelRatio;
+
+  // look up size browser is displaying the canvas in CSS pixels and compute a size needed to make drawingBuffer match in device pixels to support HD-DPI
+
+  let displayWidth = Math.floor(canvas.clientWidth * realToCSSPixels);
+
+  let displayHeight = Math.floor(canvas.clientHeight * realToCSSPixels);
+
+  //  check to see if canvas is not the same size
+  if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+  }
+}
+
+//
 // Start here
 //
 
@@ -339,6 +359,11 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   //   near things obscure far things
   gl.depthFunc(gl.LEQUAL);
 
+  // Call the resize function
+  resize(gl.canvas);
+
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
   //
   //   Clear the canvas before drawing on it.
   //
@@ -457,7 +482,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
 }
 
 //
-// INitialize a shader program to tell WebGL how to draw data
+// Initialize a shader program to tell WebGL how to draw data
 //
 
 function initShaderProgram(gl, vsSource, fsSource) {
